@@ -1,0 +1,15 @@
+{
+    "name": "fzfr/xendit-fossbilling",
+    "type": "library",
+    "authors": [
+        {
+            "name": "FZFR",
+            "email": "me@fazza.fr"
+        }
+    ],
+    "require": {
+        "php": ">=8.0",
+        "ext-json": "*",        
+        "monolog/monolog": "*"        
+    }
+}
