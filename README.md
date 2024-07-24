@@ -1,10 +1,10 @@
 <div align="center">
   <img src="https://cdn.fazza.fr/REDACTED/img/xendit-foss-banner.jpg" alt="Xendit for FOSSBilling">
   <h1>Xendit Integration for FOSSBilling</h1>
-  <img src="https://img.shields.io/github/v/release/FZFR/Xendit-FOSSBilling">
-  <img src="https://img.shields.io/github/downloads/FZFR/Xendit-FOSSBilling/total">
+  <img src="https://img.shields.io/github/v/release/FZFR/Xendit-FOSSBilling?include_prereleases&sort=semver&display_name=release&style=flat">
+  <img src="https://img.shields.io/github/downloads/FZFR/Xendit-FOSSBilling/total?style=flat">
   <img src="https://img.shields.io/github/repo-size/FZFR/Xendit-FOSSBilling">
-  <img alt="GitHub" src="https://img.shields.io/github/license/FZFR/Xendit-FOSSBilling">
+  <img alt="GitHub" src="https://img.shields.io/github/license/FZFR/Xendit-FOSSBilling?style=flat">  
 </div>
 
 ## Overview
