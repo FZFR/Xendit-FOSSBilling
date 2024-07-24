@@ -20,11 +20,13 @@ Provide your [FOSSBilling](https://fossbilling.org) customers with a variety of 
   - [1). Extension directory](#1-extension-directory)
   - [2). Manual installation](#2-manual-installation)
 - [Configuration](#configuration)
-- [Webhook Configuration](#webhook-configuration)
+  - [Webhook Configuration](#webhook-configuration)
 - [Usage](#usage)
 - [Troubleshooting](#troubleshooting)
+- [TODO](#todo)
 - [Contributing](#contributing)
 - [License](#license)
+- [Support](#support)
 
 ## Installation
 
@@ -47,7 +49,7 @@ Provide your [FOSSBilling](https://fossbilling.org) customers with a variety of 
 5. Test Transactions (Optional): Test your gateway integration through a payment process.
 6. Go Live: Switch to live mode to start accepting real payments.
 
-## Webhook Configuration
+### Webhook Configuration
 
 To set up webhooks:
 
@@ -67,6 +69,13 @@ Once you've installed and configured the module, you can start using Xendit as a
 - Ensure your server's IP is whitelisted in Xendit's settings if you're experiencing connection issues.
 - Verify that the API keys and Webhook Verification Tokens are correctly entered in the FOSSBilling configuration.
 
+## TODO
+
+- [ ] Implement automatic invoice status update to 'paid' upon successful payment
+- [ ] Activate service automatically after payment confirmation
+- [ ] Resolve session persistence issues during redirect from Xendit
+
+We are currently working on improving the automatic processing of successful payments. If you have experience with FOSSBilling payment adapters or Xendit integration and can offer assistance, please feel free to contribute or reach out. Your help would be greatly appreciated!
 
 ## Contributing
 We welcome contributions to enhance and improve this integration module. If you'd like to contribute, please follow these steps:
@@ -81,4 +90,9 @@ This FOSSBilling Xendit Payment Gateway Integration module is open-source softwa
 
 > *Note*: This module is not officially affiliated with [FOSSBilling](https://fossbilling.org) or [Xendit](https://www.xendit.co). Please refer to their respective documentation for detailed information on FOSSBilling and Xendit.
 
-For support or questions, feel free to contact us at me@fazza.fr
+
+## Support
+
+For issues related to this adapter, please open an issue.
+
+For Xendit-specific issues, please contact Xendit support.
