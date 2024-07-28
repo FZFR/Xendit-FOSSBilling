@@ -4,13 +4,10 @@ use Monolog\Handler\StreamHandler;
 use Monolog\Handler\RotatingFileHandler;
 
 if (file_exists(__DIR__ . '/../vendor/autoload.php')) {
-    // Development environment
     require_once __DIR__ . '/../vendor/autoload.php';
 } elseif (file_exists(__DIR__ . '/vendor/autoload.php')) {
-    // Build environment
     require_once __DIR__ . '/vendor/autoload.php';
 } else {
-    // Handle the case when the autoloader is not found
     die('Autoloader not found.');
 }
 
@@ -70,8 +67,8 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
             'description' => 'Configure Xendit API key and Webhook Verification Token to start accepting payments via Xendit.',
             'logo' => [
                 'logo' => 'Xendit.png',
-                'height' => '50px',
-                'width' => '50px',
+                'height' => '60px',
+                'width' => '60px',
             ],
             'form' => [
                 'api_key' => [
@@ -127,6 +124,7 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
             ],
         ];
     }
+
     private function getConfigValue($key)
     {
         $prefix = $this->config['use_sandbox'] ? 'sandbox_' : '';
@@ -154,7 +152,7 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
 
     private function generatePaymentForm($invoiceUrl, $invoiceId): string
     {
-        $html = '<form id="xendit-payment-form" method="post" action="' . $invoiceUrl . '">';
+        $html = '<form id="xendit-payment-form" method="get" action="' . $invoiceUrl . '">';
         $html .= '<input type="hidden" name="external_id" value="' . $invoiceId . '">';
         $html .= '<input type="submit" value="Pay with Xendit" style="display:none;">';
         $html .= '</form>';
@@ -171,7 +169,6 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
             $this->logger->info('Raw input: ' . file_get_contents('php://input'));
         }
 
-        // Check if this is a return from success_redirect_url
         if (isset($data['get']['bb_invoice_id'])) {
             return $this->handleSuccessRedirect($data['get']['bb_invoice_id'], $gateway_id);
         }
@@ -184,11 +181,10 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
         $invoiceModel = $this->di['db']->load('Invoice', $invoice_id);
         
         if ($invoiceModel->status !== 'paid') {
-            $this->updateInvoiceStatus($invoiceModel, 'paid');
             $tx = $this->createOrUpdateTransaction($invoice_id, $gateway_id, $invoiceModel);
             $this->processPayment($invoiceModel, $tx);
             if ($this->config['enable_logging']) {
-                $this->logger->info('Xendit payment auto-approved for invoice #' . $invoice_id);
+                $this->logger->info('Xendit payment processed for invoice #' . $invoice_id);
             }
         } else {
             if ($this->config['enable_logging']) {
@@ -246,15 +242,10 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
         return $result;
     }
 
-
-
     private function processSuccessfulPayment($tx, $invoiceModel, $ipn)
     {
         $this->updateTransaction($tx, $ipn);
-        $this->updateInvoiceStatus($invoiceModel, 'paid');
-        $this->recordPayment($invoiceModel, $tx, $ipn);
-        $this->updateClientBalance($invoiceModel, $tx, $ipn);
-        $this->processInvoiceCredits($invoiceModel);
+        $this->processPayment($invoiceModel, $tx);
 
         if ($this->config['enable_logging']) {
             $this->logger->info('Xendit payment processed successfully for invoice #' . $invoiceModel->id);
@@ -273,13 +264,6 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
             $this->logger->info('Xendit payment not completed for invoice #' . $invoice_id . '. Status: ' . $status);
         }
         return false;
-    }
-
-    private function updateInvoiceStatus($invoiceModel, $status): void
-    {
-        $invoiceModel->status = $status;
-        $invoiceModel->paid_at = date('Y-m-d H:i:s');
-        $this->di['db']->store($invoiceModel);
     }
 
     private function createOrUpdateTransaction($invoice_id, $gateway_id, $invoiceModel)
@@ -302,24 +286,29 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
         return $tx;
     }
 
-    private function processPayment($invoiceModel, $tx): void
+    private function processPayment($invoiceModel, $tx)
     {
         $invoiceService = $this->di['mod_service']('Invoice');
         $paymentService = $this->di['mod_service']('Invoice', 'Payment');
-        $paymentService->recordPayment($invoiceModel->id, $tx->amount, 'Xendit payment (auto-approved)', $tx);
+
+        $paymentService->recordPayment($invoiceModel->id, $tx->amount, 'Xendit payment', $tx);
 
         $clientService = $this->di['mod_service']('Client');
         $client = $this->di['db']->getExistingModelById('Client', $invoiceModel->client_id);
-        $clientService->addFunds($client, $tx->amount, 'Xendit payment (auto-approved)', [
+        $clientService->addFunds($client, $tx->amount, 'Xendit payment', [
             'type' => 'Xendit',
             'rel_id' => $tx->id,
         ]);
 
         $invoiceService->payInvoiceWithCredits($invoiceModel);
-        $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
+        $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->client_id]);
+
+        if ($this->config['enable_logging']) {
+            $this->logger->info('Invoice #' . $invoiceModel->id . ' marked as paid and product activation triggered');
+        }
     }
 
-    private function updateTransaction($tx, $ipn): void
+    private function updateTransaction($tx, $ipn)
     {
         $tx->txn_status = 'complete';
         $tx->txn_id = $ipn['id'];
@@ -328,29 +317,6 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
         $tx->status = 'complete';
         $tx->updated_at = date('Y-m-d H:i:s');
         $this->di['db']->store($tx);
-    }
-
-    private function recordPayment($invoiceModel, $tx, $ipn): void
-    {
-        $paymentService = $this->di['mod_service']('Invoice', 'Payment');
-        $paymentService->recordPayment($invoiceModel->id, $tx->amount, 'Xendit payment: ' . $ipn['id'], $tx);
-    }
-
-    private function updateClientBalance($invoiceModel, $tx, $ipn): void
-    {
-        $clientService = $this->di['mod_service']('Client');
-        $client = $this->di['db']->getExistingModelById('Client', $invoiceModel->client_id);
-        $clientService->addFunds($client, $tx->amount, 'Xendit payment ' . $ipn['id'], [
-            'type' => 'Xendit',
-            'rel_id' => $ipn['id'],
-        ]);
-    }
-
-    private function processInvoiceCredits($invoiceModel): void
-    {
-        $invoiceService = $this->di['mod_service']('Invoice');
-        $invoiceService->payInvoiceWithCredits($invoiceModel);
-        $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->client_id]);
     }
 
     private function createXenditInvoice($invoice)
@@ -419,7 +385,6 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
 
         return $result;
     }
-
     private function createDetailedDescription($invoice, $items)
     {
         $description = "Invoice " . $invoice->serie . $invoice->nr;
@@ -440,12 +405,10 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
         return hash_equals($this->getWebhookToken(), $token);
     }
 
-
     private function getApiKey()
     {
         return $this->config['use_sandbox'] ? $this->config['sandbox_api_key'] : $this->config['api_key'];
     }
-
 
     private function getWebhookToken()
     {
