@@ -290,21 +290,52 @@ class Payment_Adapter_Xendit implements \FOSSBilling\InjectionAwareInterface
     {
         $invoiceService = $this->di['mod_service']('Invoice');
         $paymentService = $this->di['mod_service']('Invoice', 'Payment');
-
-        $paymentService->recordPayment($invoiceModel->id, $tx->amount, 'Xendit payment', $tx);
-
-        $clientService = $this->di['mod_service']('Client');
-        $client = $this->di['db']->getExistingModelById('Client', $invoiceModel->client_id);
-        $clientService->addFunds($client, $tx->amount, 'Xendit payment', [
-            'type' => 'Xendit',
-            'rel_id' => $tx->id,
-        ]);
-
-        $invoiceService->payInvoiceWithCredits($invoiceModel);
-        $invoiceService->doBatchPayWithCredits(['client_id' => $invoiceModel->client_id]);
-
+    
         if ($this->config['enable_logging']) {
-            $this->logger->info('Invoice #' . $invoiceModel->id . ' marked as paid and product activation triggered');
+            $this->logger->info('Processing payment for invoice #' . $invoiceModel->id);
+        }
+    
+        try {
+            $paymentService->recordPayment($invoiceModel->id, $tx->amount, 'Xendit payment', $tx);
+    
+            if ($this->config['enable_logging']) {
+                $this->logger->info('Payment recorded for invoice #' . $invoiceModel->id);
+            }
+    
+            $clientService = $this->di['mod_service']('Client');
+            $client = $this->di['db']->getExistingModelById('Client', $invoiceModel->client_id);
+            $clientService->addFunds($client, $tx->amount, 'Xendit payment', [
+                'type' => 'Xendit',
+                'rel_id' => $tx->id,
+            ]);
+    
+            if ($this->config['enable_logging']) {
+                $this->logger->info('Funds added to client balance for invoice #' . $invoiceModel->id);
+            }
+    
+            $invoiceService->payInvoiceWithCredits($invoiceModel);
+            $invoiceService->doBatchPayWithCredits(['client_id' => $client->id]);
+    
+            if ($this->config['enable_logging']) {
+                $this->logger->info('Invoice #' . $invoiceModel->id . ' marked as paid and product activation triggered');
+            }
+    
+            $updatedInvoice = $this->di['db']->load('Invoice', $invoiceModel->id);
+            if ($updatedInvoice->status != 'paid') {
+                if ($this->config['enable_logging']) {
+                    $this->logger->warning('Invoice #' . $invoiceModel->id . ' was not marked as paid after processing');
+                }
+                $invoiceService->markAsPaid($updatedInvoice);
+                if ($this->config['enable_logging']) {
+                    $this->logger->info('Manually marked invoice #' . $invoiceModel->id . ' as paid');
+                }
+            }
+    
+        } catch (\Exception $e) {
+            if ($this->config['enable_logging']) {
+                $this->logger->error('Error processing payment for invoice #' . $invoiceModel->id . ': ' . $e->getMessage());
+            }
+            throw new \Payment_Exception('Failed to process payment: ' . $e->getMessage());
         }
     }
 
