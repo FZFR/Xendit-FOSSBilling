@@ -75,6 +75,7 @@ Once installed and configured, Xendit will appear as a payment option during the
 
 ## Features
 
+- [x] Using Xendit Payment Link (https://docs.xendit.co/payment-link)
 - [x] Automatic invoice status update to 'paid' upon successful payment
 - [x] Activate service automatically after payment confirmation
 - [x] Comprehensive handling of various payment statuses (PAID, EXPIRED, PENDING, FAILED)
