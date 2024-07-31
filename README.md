@@ -11,7 +11,7 @@
 Provide your [FOSSBilling](https://fossbilling.org) customers with a variety of payment options, including Credit/Debit cards, Bank Transfer, E-Wallets, and more through [Xendit](https://www.xendit.co).
 
 > **Note**
-> This extension has been fully tested in both sandbox and production environments, supporting payments from creation to completion (production ready).
+> Warning This extension, like FOSSBilling itself is under active development but is currently very much beta software. This means that there may be stability or security issues and it is not yet recommended for use in active production environments!
 
 ## Table of Contents
 - [Overview](#overview)
