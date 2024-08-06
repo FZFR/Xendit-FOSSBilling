@@ -31,9 +31,7 @@ Provide your [FOSSBilling](https://fossbilling.org) customers with a variety of 
 ## Installation
 
 ### 1). Extension directory
-> Not yet implemented  
->
-> 
+The easiest way to install this extension is by using the [FOSSBilling extension directory](https://extensions.fossbilling.org/extension/Xendit).
 ### 2). Manual installation
 1. Download the latest release from the [GitHub repository](https://github.com/FZFR/Xendit-FOSSBilling/releases)
 2. Create a new folder named **Xendit** in the **/library/Payment/Adapter** directory of your FOSSBilling installation
