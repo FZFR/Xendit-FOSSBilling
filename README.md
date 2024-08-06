@@ -81,7 +81,7 @@ Once installed and configured, Xendit will appear as a payment option during the
 
 
 ## Contributing
-We welcome contributions to enhance and improve this integration module. If you'd like to contribute, please follow these steps:
+I welcome contributions to enhance and improve this integration module. If you'd like to contribute, please follow these steps:
 
 1. Fork the repository.
 2. Create a new branch for your feature or bugfix: `git checkout -b feature-name`.
